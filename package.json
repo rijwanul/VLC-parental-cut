@@ -1,0 +1,8 @@
+{
+  "name": "vlc-parental-cut",
+  "version": "1.0.0",
+  "description": "Turn a list of skip ranges into a VLC playlist. Runs in the browser.",
+  "license": "ISC",
+  "private": true,
+  "scripts": { "test": "node tests/run.js" }
+}

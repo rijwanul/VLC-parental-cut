@@ -1,0 +1,18 @@
+Buffer before and after: 1s
+
+Sample Show - S01E01 (Pilot):
+Runtime: 24:10
+
+Skip-
+* 3:30.9-3:52.1: Pregnancy talk between friends. (Mid, pregnancy talk)
+* 5:54.1-6:08.5: Double-meaning lines. (Low, double meaning)
+* 12:10-13:25: A long romantic scene. (Mid, romantic)
+
+Others-
+* 0:33.0-0:40.5: One mild joke.
+
+Sample Show - S01E02 (Second Day):
+
+Skip-
+* 2:00-2:45: A romantic remark. (Low, romantic)
+* 9:15-10:40: A romantic scene. (High, romantic)

@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>VLC Parental Cut</title>
+<meta name="description" content="Paste a skip list, tick what to cut, and download a VLC playlist that plays everything else. Runs in your browser, nothing is uploaded.">
+<meta name="theme-color" content="#16212b">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="alternate icon" href="assets/favicon.ico">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta property="og:title" content="VLC Parental Cut">
+<meta property="og:description" content="Paste a skip list, pick what to cut, play the rest in VLC.">
+<meta property="og:image" content="assets/banner.png">
+<link rel="stylesheet" href="css/style.css">
+<script>
+/* Apply the saved theme before first paint so the page does not flash. */
+try { var s = JSON.parse(localStorage.getItem("spb-v2") || "{}"); if (s.theme) document.documentElement.setAttribute("data-theme", s.theme); } catch (e) {}
+</script>
+</head>
+<body>
+<a class="skip-link" href="#tool">Skip to the tool</a>
+
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="#top" aria-label="VLC Parental Cut, top of page">
+      <img src="assets/favicon.svg" alt="" width="30" height="30">
+      <span>VLC Parental Cut</span>
+    </a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#tool"><i data-lucide="scissors" aria-hidden="true"></i><span>Tool</span></a>
+      <a href="#guide"><i data-lucide="book-open" aria-hidden="true"></i><span>Guide</span></a>
+      <a href="#about"><i data-lucide="info" aria-hidden="true"></i><span>About</span></a>
+    </nav>
+    <div class="top-btns">
+      <button type="button" class="icon-btn" id="themeBtn" aria-label="Switch between light and dark theme" title="Theme"><i data-lucide="moon" aria-hidden="true"></i></button>
+      <button type="button" class="icon-btn" id="openSettings" aria-label="Open settings" title="Settings"><i data-lucide="settings" aria-hidden="true"></i></button>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <p class="eyebrow">Subtitle file in, VLC playlist out</p>
+    <h1>Skip the parts you don't want to watch.</h1>
+    <p class="lede">Assalamualaikum. Watching videos with inappropriate talking points, dialogue and scenes is not suitable for a Muslim. If someone must watch or listen to something for reasons they will answer to Allah for, this tool can help a little to cut out the unwanted portions of media played through VLC, using the playlist method.</p>
+    <p class="lede">Ask an AI to read a subtitle file and list the scenes to skip. Paste its answer here, tick what you want cut, and download a VLC playlist that plays everything else. No install, no re-encoding, and nothing leaves your browser.</p>
+    <div class="cta">
+      <a class="btn primary" href="#tool"><i data-lucide="scissors" aria-hidden="true"></i>Go to the tool</a>
+      <a class="btn" href="#guide"><i data-lucide="book-open" aria-hidden="true"></i>Read the guide</a>
+    </div>
+  </section>
+
+  <section id="tool" class="block" aria-labelledby="tool-h">
+    <h2 id="tool-h">Tool</h2>
+
+    <div class="card">
+      <div class="card-head">
+        <h3><label for="src">Your skip list</label></h3>
+        <div class="actions tight">
+          <button type="button" class="btn small" id="loadExample"><i data-lucide="sparkles" aria-hidden="true"></i>Load example</button>
+          <button type="button" class="btn small" id="importBtn"><i data-lucide="upload" aria-hidden="true"></i>Open a .txt file</button>
+          <button type="button" class="btn small" id="clearAll"><i data-lucide="x" aria-hidden="true"></i>Clear</button>
+          <input type="file" id="importFile" accept=".txt,text/plain" hidden>
+        </div>
+      </div>
+      <textarea id="src" class="code tall" spellcheck="false" autocomplete="off" aria-describedby="srcHelp"></textarea>
+      <p class="problems" id="problems" role="status"></p>
+      <details class="fmt" id="srcHelp">
+        <summary>How to write the list</summary>
+        <ul>
+          <li>Each episode starts with a title line ending in a colon, for example <code>Show - S01E02 (Episode title):</code></li>
+          <li><code>Skip-</code> starts the ranges that are skipped. <code>Others-</code> starts ranges that stay in unless you tick them.</li>
+          <li>A range is <code>* start-end: note (Level, tags)</code>. Times can be <code>3:30.9</code>, <code>1:02:03</code> or plain seconds. The note and brackets are optional. Level is Low, Mid or High.</li>
+          <li><code>Runtime: 24:10</code> is optional and makes the timeline exact. <code>Video: name.mkv</code> is optional too.</li>
+          <li><code>Buffer before and after: 1s</code> widens every skipped range. Put it above the first title to apply it to every episode, or inside an episode for just that one. <code>Buffer before:</code> and <code>Buffer after:</code> set one side.</li>
+        </ul>
+      </details>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h3><label for="files">Video file names</label></h3>
+      </div>
+      <textarea id="files" class="code" rows="5" spellcheck="false" autocomplete="off" placeholder="Paste the output of dir /b or tree /f here"></textarea>
+      <ul class="status" id="fileStatus" aria-live="polite"></ul>
+    </div>
+
+    <div id="builder" class="card builder" tabindex="-1">
+      <div id="tabs" class="tabs" role="group" aria-label="Episodes"></div>
+      <div id="panel"></div>
+    </div>
+  </section>
+
+  <section id="guide" class="block" aria-labelledby="guide-h">
+    <h2 id="guide-h">Guide</h2>
+    <ol class="steps">
+      <li class="step">
+        <div class="step-ic"><i data-lucide="download" aria-hidden="true"></i></div>
+        <div class="step-body">
+          <h3>Download the subtitle file</h3>
+          <p>Get the English <code>.srt</code> for the exact video you have. Pick the one that names your release (for example WEB-DL or BluRay) so the timings line up.</p>
+          <ul class="chips">
+            <li><a href="https://subdl.com" target="_blank" rel="noopener noreferrer">SubDL<i data-lucide="external-link" aria-hidden="true"></i></a></li>
+            <li><a href="https://www.opensubtitles.com" target="_blank" rel="noopener noreferrer">OpenSubtitles<i data-lucide="external-link" aria-hidden="true"></i></a></li>
+            <li><a href="https://www.addic7ed.com" target="_blank" rel="noopener noreferrer">Addic7ed<i data-lucide="external-link" aria-hidden="true"></i></a></li>
+          </ul>
+        </div>
+      </li>
+
+      <li class="step">
+        <div class="step-ic"><i data-lucide="clipboard-copy" aria-hidden="true"></i></div>
+        <div class="step-body">
+          <h3>Copy the prompt</h3>
+          <p>Say what you want skipped. The prompt updates as you type.</p>
+          <div class="grid2">
+            <label class="f" for="criteria">Skip<input id="criteria" type="text" autocomplete="off" spellcheck="false"></label>
+            <label class="f" for="keep">Do not skip (optional)<input id="keep" type="text" autocomplete="off" spellcheck="false"></label>
+          </div>
+          <label class="sr-only" for="promptText">Prompt text</label>
+          <textarea id="promptText" class="code" rows="9" readonly spellcheck="false"></textarea>
+          <div class="actions">
+            <button type="button" class="btn primary" id="copyPrompt"><i data-lucide="copy" aria-hidden="true"></i>Copy prompt</button>
+            <span class="msg" id="promptMsg" role="status"></span>
+          </div>
+        </div>
+      </li>
+
+      <li class="step">
+        <div class="step-ic"><i data-lucide="send" aria-hidden="true"></i></div>
+        <div class="step-body">
+          <h3>Send the prompt and the subtitle file to an AI</h3>
+          <p>Attach the <code>.srt</code>, paste the prompt and send. If the answer comes back in another format, reply with "use exactly the format from my prompt".</p>
+          <ul class="chips">
+            <li><a href="https://claude.ai" target="_blank" rel="noopener noreferrer">Claude<i data-lucide="external-link" aria-hidden="true"></i></a></li>
+            <li><a href="https://gemini.google.com" target="_blank" rel="noopener noreferrer">Gemini<i data-lucide="external-link" aria-hidden="true"></i></a></li>
+            <li><a href="https://chatgpt.com" target="_blank" rel="noopener noreferrer">ChatGPT<i data-lucide="external-link" aria-hidden="true"></i></a></li>
+          </ul>
+          <p class="note">The AI site receives your subtitle file and prompt. This page never does.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <div class="step-ic"><i data-lucide="clipboard-paste" aria-hidden="true"></i></div>
+        <div class="step-body">
+          <h3>Paste the answer</h3>
+          <p>Copy the AI's list and paste it <a href="#src" data-focus="src">here in the text box</a>. The page below fills in as you paste.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <div class="step-ic"><i data-lucide="file-text" aria-hidden="true"></i></div>
+        <div class="step-body">
+          <h3>Paste the file names</h3>
+          <p>Open the folder with your videos, run <code>dir /b</code> in Command Prompt (or <code>tree /f</code>) and paste the output <a href="#files" data-focus="files">here in the text box</a>. Episodes are matched to files by their <code>S01E02</code> code.</p>
+        </div>
+      </li>
+
+      <li class="step">
+        <div class="step-ic"><i data-lucide="list-checks" aria-hidden="true"></i></div>
+        <div class="step-body">
+          <h3>Check, uncheck and download</h3>
+          <p>In <a href="#builder" data-focus="builder">the builder</a>, tick the ranges to skip, fix any times that land early or late, then download the <code>.m3u</code>. Put it in the same folder as the video and open the playlist in VLC.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section id="about" class="block" aria-labelledby="about-h">
+    <h2 id="about-h">About</h2>
+    <div class="about">
+      <div>
+        <h3><i data-lucide="film" aria-hidden="true"></i>What it does</h3>
+        <p>VLC can start and stop a file at set times. This page turns a list of skip ranges into a playlist that plays the file in pieces, leaving the skipped ranges out. It never edits your video.</p>
+      </div>
+      <div>
+        <h3><i data-lucide="shield-check" aria-hidden="true"></i>Privacy</h3>
+        <p>Everything runs in your browser. Your list and settings are saved only in this browser, so clearing site data removes them. The AI sites in the guide are separate and see what you send them.</p>
+      </div>
+      <div>
+        <h3><i data-lucide="languages" aria-hidden="true"></i>Limits</h3>
+        <p>An AI reading subtitles sees dialogue only, not the picture, so it can miss things and make judgment calls. Subtitle times match your video only if both come from the same release. Check the first cut of each episode.</p>
+      </div>
+      <div>
+        <h3><i data-lucide="code-xml" aria-hidden="true"></i>Open source</h3>
+        <p>ISC licensed. <a id="repoLink" href="https://github.com/rijwanul/VLC-parental-cut" target="_blank" rel="noopener noreferrer">Source on GitHub</a>. Icons by <a href="https://lucide.dev" target="_blank" rel="noopener noreferrer">Lucide</a> (ISC). Fonts: Bricolage Grotesque, Public Sans and JetBrains Mono (SIL OFL).</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <p>Works with VLC 3 and later</p>
+</footer>
+
+<dialog id="settings" aria-labelledby="settings-h">
+  <form method="dialog" id="settingsForm" class="dlg">
+    <div class="dlg-head">
+      <h2 id="settings-h"><i data-lucide="settings" aria-hidden="true"></i>Settings</h2>
+      <button type="button" class="icon-btn" id="closeSettings" aria-label="Close settings"><i data-lucide="x" aria-hidden="true"></i></button>
+    </div>
+    <p class="note" style="margin-top:0">Changes here rewrite the matching lines in your list, so the text box stays the single source of truth.</p>
+
+    <fieldset>
+      <legend>All episodes</legend>
+      <label class="f" for="setShow">Series name<input id="setShow" type="text" autocomplete="off"></label>
+      <div class="grid2">
+        <label class="f" for="setBF">Default buffer before (seconds)<input id="setBF" type="text" inputmode="decimal" autocomplete="off"></label>
+        <label class="f" for="setAF">Default buffer after (seconds)<input id="setAF" type="text" inputmode="decimal" autocomplete="off"></label>
+      </div>
+      <div class="grid2">
+        <label class="f" for="setGap">Shortest part to keep (seconds)<input id="setGap" type="text" inputmode="decimal" autocomplete="off"></label>
+        <label class="f" for="setPattern">Playlist file name pattern<input id="setPattern" type="text" autocomplete="off" spellcheck="false"></label>
+      </div>
+      <p class="hint">Pattern can use <code>{code}</code>, <code>{show}</code> and <code>{name}</code>.</p>
+    </fieldset>
+
+    <fieldset id="epFields">
+      <legend id="epLegend">This episode</legend>
+      <div class="grid2">
+        <label class="f" for="setCode">Episode code<input id="setCode" type="text" autocomplete="off" placeholder="S01E02"></label>
+        <label class="f" for="setName">Episode title<input id="setName" type="text" autocomplete="off"></label>
+      </div>
+      <div class="grid2">
+        <label class="f" for="setRun">Runtime (m:ss)<input id="setRun" type="text" inputmode="decimal" autocomplete="off" placeholder="24:10"></label>
+        <label class="f" for="setPl">Playlist file name<input id="setPl" type="text" autocomplete="off" spellcheck="false"></label>
+      </div>
+      <label class="f" for="setVideo">Video file name<input id="setVideo" type="text" autocomplete="off" spellcheck="false"></label>
+    </fieldset>
+
+    <div class="dlg-foot">
+      <button type="button" class="btn danger small" id="resetAll"><i data-lucide="rotate-ccw" aria-hidden="true"></i>Reset everything</button>
+      <span class="grow"></span>
+      <button type="button" class="btn" id="cancelSettings">Cancel</button>
+      <button type="submit" class="btn primary" id="applySettings"><i data-lucide="check" aria-hidden="true"></i>Apply</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/lucide@1.61.0/dist/umd/lucide.min.js" defer></script>
+<script src="js/parser.js" defer></script>
+<script src="js/playlist.js" defer></script>
+<script src="js/prompt.js" defer></script>
+<script src="js/app.js" defer></script>
+</body>
+</html>
